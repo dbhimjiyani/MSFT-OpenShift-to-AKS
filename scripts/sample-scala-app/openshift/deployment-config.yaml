@@ -1,0 +1,68 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: scala-app
+  labels:
+    app: scala-app
+spec:
+  replicas: 2
+  selector:
+    app: scala-app
+  template:
+    metadata:
+      labels:
+        app: scala-app
+    spec:
+      containers:
+      - name: scala-app
+        image: IMAGE_PLACEHOLDER
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: HOST
+          value: "0.0.0.0"
+        - name: PORT
+          value: "8080"
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: scala-app-config
+              key: APP_NAME
+        - name: APP_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: scala-app-config
+              key: APP_VERSION
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: scala-app-config
+              key: ENVIRONMENT
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+  triggers:
+  - type: ConfigChange
